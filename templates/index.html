@@ -1,0 +1,182 @@
+{% extends "layout.html" %}
+
+{% block content %}
+    <div class="container">
+        <h2 class="text-center mb-4 text-white">Monthly Finance Tracker by dca</h2>
+
+        <!-- Form untuk menambahkan transaksi -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-plus-circle"></i> Add New Transaction</h5>
+                <form action="/add" method="post">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Description</label>
+                                <input type="text" class="form-control" id="description" name="description" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="amount" class="form-label">Amount</label>
+                                <input type="number" class="form-control" id="amount" name="amount" step="0.01" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="type" class="form-label">Type</label>
+                                <select class="form-select" id="type" name="type" required>
+                                    <option value="income">Income</option>
+                                    <option value="expense">Expense</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="date" class="form-label">Date</label>
+                                <input type="date" class="form-control" id="date" name="date" required>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-save"></i> Add Transaction</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Diagram Batang -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-chart-bar"></i> Monthly Income and Expense</h5>
+                <canvas id="barChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Daftar transaksi -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-history"></i> Transaction History</h5>
+                <div class="table-responsive"> <!-- Tambahkan div ini -->
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th>Amount</th>
+                                <th>Type</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in transactions %}
+                                <tr>
+                                    <td>{{ transaction[2] }}</td>
+                                    <td>{{ format_currency(transaction[3]) }}</td>
+                                    <td>
+                                        {% if transaction[4] == 'income' %}
+                                            <span class="badge bg-success">Income</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Expense</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ transaction[5] }}</td>
+                                    <td class="text-nowrap">
+                                        <a href="/edit/{{ transaction[0] }}" class="btn btn-sm btn-warning">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </a>
+                                        <a href="/delete/{{ transaction[0] }}" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">
+                                            <i class="fas fa-trash"></i> Delete
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+
+        <!-- Ringkasan bulanan -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-chart-bar"></i> Monthly Summary</h5>
+                <div class="table-responsive"> <!-- Tambahkan div ini -->
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Month</th>
+                                <th>Total Income</th>
+                                <th>Total Expense</th>
+                                <th>Net Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for month in monthly_totals %}
+                                <tr>
+                                    <td>{{ month[0] }}</td>
+                                    <td>{{ format_currency(month[1]) }}</td>
+                                    <td>{{ format_currency(month[2]) }}</td>
+                                    <td>{{ format_currency(month[1] - month[2]) }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Ringkasan keseluruhan -->
+        <div class="summary-card">
+            <h4><i class="fas fa-chart-pie"></i> Overall Summary</h4>
+            <p><strong>Total Income:</strong> {{ format_currency(total_income) }}</p>
+            <p><strong>Total Expense:</strong> {{ format_currency(total_expense) }}</p>
+            <p><strong>Net Total:</strong> {{ format_currency(total_income - total_expense) }}</p>
+        </div>
+    </div>
+
+    <!-- Skrip untuk Diagram Batang -->
+    <script>
+        const ctx = document.getElementById('barChart').getContext('2d');
+        const barChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: {{ months | tojson }},  // Bulan-bulan
+                datasets: [
+                    {
+                        label: 'Income',
+                        data: {{ income_data | tojson }},  // Data pemasukan
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)',  // Warna hijau
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Expense',
+                        data: {{ expense_data | tojson }},  // Data pengeluaran
+                        backgroundColor: 'rgba(255, 99, 132, 0.6)',  // Warna merah
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Monthly Income and Expense'
+                    }
+                }
+            }
+        });
+    </script>
+{% endblock %}

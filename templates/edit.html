@@ -1,0 +1,31 @@
+{% extends "layout.html" %}
+
+{% block content %}
+    <div class="card mx-auto" style="max-width: 500px;">
+        <div class="card-body">
+            <h2 class="card-title text-center mb-4">Edit Transaction</h2>
+            <form action="/edit/{{ transaction[0] }}" method="post">
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description</label>
+                    <input type="text" class="form-control" id="description" name="description" value="{{ transaction[2] }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="amount" class="form-label">Amount</label>
+                    <input type="number" class="form-control" id="amount" name="amount" step="0.01" value="{{ transaction[3] }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="type" class="form-label">Type</label>
+                    <select class="form-select" id="type" name="type" required>
+                        <option value="income" {% if transaction[4] == 'income' %}selected{% endif %}>Income</option>
+                        <option value="expense" {% if transaction[4] == 'expense' %}selected{% endif %}>Expense</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="date" class="form-label">Date</label>
+                    <input type="date" class="form-control" id="date" name="date" value="{{ transaction[5] }}" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Update Transaction</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,159 @@
+/* Warna dasar */
+:root {
+    --primary-color: #6a11cb; /* Ungu */
+    --secondary-color: #2575fc; /* Biru */
+    --success-color: #00b09b; /* Hijau */
+    --danger-color: #ff4b5c; /* Merah */
+    --warning-color: #ffa500; /* Oranye */
+    --background-gradient: linear-gradient(135deg, #6a11cb, #2575fc);
+    --card-background: #ffffff;
+    --text-color: #333333;
+    --light-text-color: #ffffff;
+}
+
+/* Body dan background */
+body {
+    background: var(--background-gradient);
+    font-family: 'Arial', sans-serif;
+    color: var(--text-color);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+/* Navbar */
+.navbar {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.navbar-brand {
+    font-weight: bold;
+    color: var(--primary-color) !important;
+}
+
+.nav-link {
+    color: var(--primary-color) !important;
+}
+
+.nav-link:hover {
+    color: var(--secondary-color) !important;
+}
+
+/* Card */
+.card {
+    background: var(--card-background);
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.card-title {
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
+/* Tabel */
+.table {
+    margin-top: 20px;
+    background: var(--card-background);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.table th {
+    background-color: var(--primary-color);
+    color: var(--light-text-color);
+    font-weight: bold;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+/* Tombol */
+.btn-primary {
+    background-color: var(--primary-color);
+    border: none;
+    transition: background-color 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: var(--secondary-color);
+}
+
+.btn-danger {
+    background-color: var(--danger-color);
+    border: none;
+    transition: background-color 0.3s ease;
+}
+
+.btn-danger:hover {
+    background-color: #ff1c3a;
+}
+
+.btn-warning {
+    background-color: var(--warning-color);
+    border: none;
+    transition: background-color 0.3s ease;
+}
+
+.btn-warning:hover {
+    background-color: #ff8c00;
+}
+
+/* Alert */
+.alert {
+    margin-top: 20px;
+    border-radius: 10px;
+}
+
+/* Summary Card */
+.summary-card {
+    background: var(--card-background);
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.summary-card h4 {
+    color: var(--primary-color);
+    margin-bottom: 20px;
+}
+
+/* Form */
+.form-control {
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    padding: 10px;
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 8px rgba(106, 17, 203, 0.2);
+}
+
+/* Animasi */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card, .table, .summary-card {
+    animation: fadeIn 0.5s ease;
+}
