@@ -60,7 +60,6 @@ def format_currency(amount):
         return "Rp.0"
     return f"Rp.{amount:,.0f}".replace(",", ".")
 
-# Routes
 @app.route('/')
 @login_required
 def index():
@@ -78,7 +77,7 @@ def index():
         cursor.execute('SELECT SUM(amount) FROM transactions WHERE user_id = ? AND type = "expense"', (current_user.id,))
         total_expense = cursor.fetchone()[0] or 0
 
-        # Hitung total pemasukan dan pengeluaran per bulan
+        # Hitung total pemasukan dan pengeluaran per bulan (hanya 5 bulan terakhir)
         cursor.execute('''
             SELECT strftime('%Y-%m', date) AS month, 
                    SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) AS total_income,
@@ -87,10 +86,12 @@ def index():
             WHERE user_id = ?
             GROUP BY strftime('%Y-%m', date)
             ORDER BY month DESC
+            LIMIT 5
         ''', (current_user.id,))
         monthly_totals = cursor.fetchall()
 
-        # Format data untuk Chart.js
+        # Urutkan kembali agar dari bulan lama ke baru
+        monthly_totals.reverse()
         months = [row[0] for row in monthly_totals]
         income_data = [row[1] for row in monthly_totals]
         expense_data = [row[2] for row in monthly_totals]
@@ -104,6 +105,7 @@ def index():
                            income_data=income_data,
                            expense_data=expense_data,
                            format_currency=format_currency)
+
 @app.route('/add', methods=['POST'])
 @login_required
 def add_transaction():

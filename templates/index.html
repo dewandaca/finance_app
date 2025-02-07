@@ -45,19 +45,32 @@
             </div>
         </div>
 
+        <!-- Dropdown untuk memilih bulan -->
+        <div class="mb-4">
+            <label for="monthSelect" class="form-label text-white">Select Month</label>
+            <select id="monthSelect" class="form-select" onchange="updateChart()">
+                <option value="">All</option>
+                {% for month in months %}
+                    <option value="{{ month }}">{{ month }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
         <!-- Diagram Batang -->
         <div class="card mb-4">
             <div class="card-body">
                 <h5 class="card-title"><i class="fas fa-chart-bar"></i> Monthly Income and Expense</h5>
-                <canvas id="barChart"></canvas>
+                <div style="width: 100%; overflow-x: auto;">
+                    <canvas id="barChart" style="max-width: 100%; height: 300px;"></canvas>
+                </div>
             </div>
         </div>
 
         <!-- Daftar transaksi -->
-        <div class="card mb-4">
+        <div class="card mb-4" id="transaction-history">
             <div class="card-body">
                 <h5 class="card-title"><i class="fas fa-history"></i> Transaction History</h5>
-                <div class="table-responsive"> <!-- Tambahkan div ini -->
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;"> 
                     <table class="table table-striped">
                         <thead>
                             <tr>
@@ -68,7 +81,7 @@
                                 <th>Action</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="transaction-body">
                             {% for transaction in transactions %}
                                 <tr>
                                     <td>{{ transaction[2] }}</td>
@@ -96,13 +109,12 @@
                 </div>
             </div>
         </div>
-        
 
         <!-- Ringkasan bulanan -->
-        <div class="card mb-4">
+        <div class="card mb-4" id="monthly-summary">
             <div class="card-body">
                 <h5 class="card-title"><i class="fas fa-chart-bar"></i> Monthly Summary</h5>
-                <div class="table-responsive"> <!-- Tambahkan div ini -->
+                <div class="table-responsive">
                     <table class="table table-striped">
                         <thead>
                             <tr>
@@ -112,7 +124,7 @@
                                 <th>Net Total</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="monthly-summary-body">
                             {% for month in monthly_totals %}
                                 <tr>
                                     <td>{{ month[0] }}</td>
@@ -126,7 +138,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Ringkasan keseluruhan -->
         <div class="summary-card">
             <h4><i class="fas fa-chart-pie"></i> Overall Summary</h4>
@@ -139,44 +151,156 @@
     <!-- Skrip untuk Diagram Batang -->
     <script>
         const ctx = document.getElementById('barChart').getContext('2d');
+
+        // Data bulan dan transaksi dari Flask
+        let months = {{ months | tojson }};
+        let incomeData = {{ income_data | tojson }};
+        let expenseData = {{ expense_data | tojson }};
+        let transactions = {{ transactions | tojson }};
+        let monthlyTotals = {{ monthly_totals | tojson }};
+
+        // Inisialisasi Chart.js
         const barChart = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: {{ months | tojson }},  // Bulan-bulan
+                labels: months,
                 datasets: [
                     {
                         label: 'Income',
-                        data: {{ income_data | tojson }},  // Data pemasukan
-                        backgroundColor: 'rgba(75, 192, 192, 0.6)',  // Warna hijau
+                        data: incomeData,
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
                         borderColor: 'rgba(75, 192, 192, 1)',
                         borderWidth: 1
                     },
                     {
                         label: 'Expense',
-                        data: {{ expense_data | tojson }},  // Data pengeluaran
-                        backgroundColor: 'rgba(255, 99, 132, 0.6)',  // Warna merah
+                        data: expenseData,
+                        backgroundColor: 'rgba(255, 99, 132, 0.6)',
                         borderColor: 'rgba(255, 99, 132, 1)',
                         borderWidth: 1
                     }
                 ]
             },
             options: {
+                maintainAspectRatio: false,
+                responsive: true,
                 scales: {
                     y: {
                         beginAtZero: true
                     }
                 },
-                responsive: true,
                 plugins: {
                     legend: {
                         position: 'top',
                     },
                     title: {
                         display: true,
-                        text: 'Monthly Income and Expense'
+                        text: 'Monthly Income and Expense (Last 5 Months)'
                     }
                 }
             }
         });
+
+        // Format Rupiah
+        function formatRupiah(value) {
+            return value.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' });
+        }
+
+        // Fungsi untuk memperbarui chart dan konten lainnya berdasarkan bulan yang dipilih
+        function updateChart() {
+            const selectedMonth = document.getElementById('monthSelect').value;
+
+            // Filter data berdasarkan bulan yang dipilih
+            if (selectedMonth) {
+                // Menemukan index bulan yang dipilih
+                const monthIndex = months.indexOf(selectedMonth);
+                
+                if (monthIndex !== -1) {
+                    // Update chart
+                    barChart.data.labels = [months[monthIndex]];
+                    barChart.data.datasets[0].data = [incomeData[monthIndex]];
+                    barChart.data.datasets[1].data = [expenseData[monthIndex]];
+
+                    // Update Transaction History
+                    const filteredTransactions = transactions.filter(transaction => transaction[5].includes(selectedMonth));
+                    let transactionRows = '';
+                    filteredTransactions.forEach(transaction => {
+                        transactionRows += `
+                            <tr>
+                                <td>${transaction[2]}</td>
+                                <td>${formatRupiah(transaction[3])}</td>
+                                <td>${transaction[4] === 'income' ? '<span class="badge bg-success">Income</span>' : '<span class="badge bg-danger">Expense</span>'}</td>
+                                <td>${transaction[5]}</td>
+                                <td class="text-nowrap">
+                                    <a href="/edit/${transaction[0]}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i> Edit</a>
+                                    <a href="/delete/${transaction[0]}" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')"><i class="fas fa-trash"></i> Delete</a>
+                                </td>
+                            </tr>
+                        `;
+                    });
+
+                    document.getElementById('transaction-body').innerHTML = transactionRows;
+
+                    // Update Monthly Summary
+                    const filteredMonthlyTotals = monthlyTotals.filter(month => month[0] === selectedMonth);
+                    let monthlySummaryRows = '';
+                    filteredMonthlyTotals.forEach(month => {
+                        monthlySummaryRows += `
+                            <tr>
+                                <td>${month[0]}</td>
+                                <td>${formatRupiah(month[1])}</td>
+                                <td>${formatRupiah(month[2])}</td>
+                                <td>${formatRupiah(month[1] - month[2])}</td>
+                            </tr>
+                        `;
+                    });
+
+                    document.getElementById('monthly-summary-body').innerHTML = monthlySummaryRows;
+                }
+            } else {
+                // Jika tidak ada bulan yang dipilih (All), tampilkan semua data
+                barChart.data.labels = months;
+                barChart.data.datasets[0].data = incomeData;
+                barChart.data.datasets[1].data = expenseData;
+
+                // Update Transaction History
+                let allTransactionRows = '';
+                transactions.forEach(transaction => {
+                    allTransactionRows += `
+                        <tr>
+                            <td>${transaction[2]}</td>
+                            <td>${formatRupiah(transaction[3])}</td>
+                            <td>${transaction[4] === 'income' ? '<span class="badge bg-success">Income</span>' : '<span class="badge bg-danger">Expense</span>'}</td>
+                            <td>${transaction[5]}</td>
+                            <td class="text-nowrap">
+                                <a href="/edit/${transaction[0]}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i> Edit</a>
+                                <a href="/delete/${transaction[0]}" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')"><i class="fas fa-trash"></i> Delete</a>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                document.getElementById('transaction-body').innerHTML = allTransactionRows;
+
+                // Update Monthly Summary
+                let allMonthlySummaryRows = '';
+                monthlyTotals.forEach(month => {
+                    allMonthlySummaryRows += `
+                        <tr>
+                            <td>${month[0]}</td>
+                            <td>${formatRupiah(month[1])}</td>
+                            <td>${formatRupiah(month[2])}</td>
+                            <td>${formatRupiah(month[1] - month[2])}</td>
+                        </tr>
+                    `;
+                });
+
+                document.getElementById('monthly-summary-body').innerHTML = allMonthlySummaryRows;
+            }
+
+            // Update chart untuk memperbarui
+            barChart.update();
+        }
+
     </script>
 {% endblock %}
